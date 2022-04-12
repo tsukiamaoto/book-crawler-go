@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"book-crawler-go/models"
+	"github.com/tsukiamaoto/book-crawler-go/models"
 	"net/http"
 
 	"encoding/json"

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"book-crawler-go/spider"
+	"github.com/tsukiamaoto/book-crawler-go/spider"
 )
 
 func main() {

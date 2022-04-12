@@ -1,8 +1,8 @@
 package spider
 
 import (
-	"book-crawler-go/configs"
-	"book-crawler-go/models"
+	"github.com/tsukiamaoto/book-crawler-go/configs"
+	"github.com/tsukiamaoto/book-crawler-go/models"
 
 	"fmt"
 	"log"
