@@ -5,7 +5,6 @@ import (
 	"github.com/tsukiamaoto/book-crawler-go/models"
 
 	"fmt"
-	"log"
 	"math/rand"
 	"regexp"
 	"strconv"
@@ -15,6 +14,7 @@ import (
 	"github.com/gocolly/colly/v2"
 	"github.com/gocolly/colly/v2/debug"
 	"github.com/gocolly/colly/v2/extensions"
+	log "github.com/sirupsen/logrus"
 )
 
 type Spider struct {
@@ -46,6 +46,7 @@ func New() *Spider {
 func (s *Spider) Run() {
 	s.visitEveryBookOnList("https://www.books.com.tw/web/sys_bbotm/books/010101/")
 
+	
 }
 
 func (s *Spider) visitEveryBookOnList(url string) {
@@ -115,7 +116,7 @@ func getNewProduct(c *colly.Collector, url string) models.Product {
 	c.OnHTML(".bd > .content", func(h *colly.HTMLElement) {
 		description, err := h.DOM.Html()
 		if err != nil {
-			log.Println(err)
+			log.Error(err)
 		}
 		product.Description = strings.TrimSpace(description)
 	})

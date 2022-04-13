@@ -2,32 +2,33 @@ package configs
 
 import (
 	"github.com/tsukiamaoto/book-crawler-go/models"
-	"net/http"
 
+	"net/http"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func GetCookies() []*http.Cookie {
 	rootDir, err := os.Getwd()
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 
 	fileName := "cookies.json"
 	filePath := rootDir + "\\configs\\" + fileName
 	jsonFile, err := os.Open(filePath)
 	if err != nil {
-		log.Println(err)
+		log.Panic(err)
 	}
 
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 	var cookies = make([]*models.Cookie, 0)
 	if err := json.Unmarshal(byteValue, &cookies); err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 
 	var cookies2HttpCookies = make([]*http.Cookie, 0)
@@ -47,21 +48,21 @@ func GetCookies() []*http.Cookie {
 func GetProxies() []string {
 	rootDir, err := os.Getwd()
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 
 	fileName := "proxy.json"
 	filePath := rootDir + "\\configs\\" + fileName
 	jsonFile, err := os.Open(filePath)
 	if err != nil {
-		log.Println(err)
+		log.Panic(err)
 	}
 
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 
 	var proxies = make([]models.Proxy, 0)
 	if err := json.Unmarshal(byteValue, &proxies); err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 
 	var proxyUrls []string
