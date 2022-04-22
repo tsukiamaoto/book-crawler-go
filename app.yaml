@@ -1,0 +1,29 @@
+application:
+  timeout:
+    read: 1000
+    write: 1000
+  port: 8080
+  host: "localhost"
+  mode: "debug"
+  appId: "go"
+  apiBaseRoute: "/api"
+
+databases:
+  shopCart:
+    host: "localhost"
+    port: 5432
+    user: "postgres"
+    password: 9955
+    dbname: "shop_cart"
+
+  default:
+    host: "localhost"
+    port: 5432
+    user: "postgres"
+    password: 9955
+    dbname: "postgres"
+
+redis:
+  host: "localhost:6379"
+  password: ""
+  db: 0
