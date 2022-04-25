@@ -1,21 +1,13 @@
-package configs
+package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 
 	log "github.com/sirupsen/logrus"
 )
-
-type Proxy struct {
-	Country  string `json:"country"`
-	IP       string `json:"ip"`
-	Port     string `json:"port"`
-	Protocol string `json:"protocol"`
-}
 
 type Cookie struct {
 	Name     string `json:"name"`
@@ -54,34 +46,4 @@ func GetCookies() []*http.Cookie {
 	}
 
 	return cookies2HttpCookies
-}
-
-func GetProxies() []string {
-	rootDir, err := os.Getwd()
-	if err != nil {
-		log.Error(err)
-	}
-
-	fileName := "proxy.json"
-	filePath := rootDir + "\\config\\" + fileName
-	jsonFile, err := os.Open(filePath)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	byteValue, _ := ioutil.ReadAll(jsonFile)
-
-	var proxies = make([]*Proxy, 0)
-	if err := json.Unmarshal(byteValue, &proxies); err != nil {
-		log.Error(err)
-	}
-
-	var proxyUrls []string
-	for _, proxy := range proxies {
-		proxyUrl := fmt.Sprintf("%s://%s:%s", proxy.Protocol, proxy.IP, proxy.Port)
-		proxyUrls = append(proxyUrls, proxyUrl)
-	}
-
-	defer jsonFile.Close()
-	return proxyUrls
 }

@@ -1,4 +1,4 @@
-package configs
+package config
 
 import (
 	"fmt"
@@ -7,10 +7,10 @@ import (
 )
 
 type Config struct {
-	Databases     map[string]*Database
-	ServerAddress string
-	AllowOrigins  []string
-	Redis         *Redis
+	Databases       map[string]*Database
+	ServerAddress   string
+	Redis           *Redis
+	ProxyServerAddr string
 }
 
 type Redis struct {
@@ -26,6 +26,7 @@ type Database struct {
 
 func LoadConfig() *Config {
 	viper.AddConfigPath(".")
+	viper.AddConfigPath("..")
 	viper.SetConfigName("app")
 	viper.SetConfigType("yaml")
 
@@ -41,18 +42,20 @@ func LoadConfig() *Config {
 	dbs["default"] = getDatabase("default")
 
 	serverAddress := fmt.Sprintf("%s:%d", viper.GetString("application.host"), viper.GetInt("application.port"))
+
 	redis := &Redis{
 		Address:  viper.GetString("redis.host"),
 		Password: viper.GetString("redis.password"),
 		DB:       viper.GetInt("redis.db"),
 	}
-	allowOrigins := viper.GetStringSlice("application.cors.allowOrigins")
+
+	proxyServerAddress := fmt.Sprintf("%s", viper.GetString("proxyServer.host"))
 
 	config := &Config{
-		Databases:     dbs,
-		ServerAddress: serverAddress,
-		Redis:         redis,
-		AllowOrigins:  allowOrigins,
+		Databases:       dbs,
+		ServerAddress:   serverAddress,
+		Redis:           redis,
+		ProxyServerAddr: proxyServerAddress,
 	}
 
 	return config

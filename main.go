@@ -7,8 +7,9 @@ import (
 )
 
 func init() {
-	// define logrus out format
+	// define logrus output format
 	log.SetFormatter(&log.JSONFormatter{})
+	log.SetReportCaller(true)
 }
 
 func main() {

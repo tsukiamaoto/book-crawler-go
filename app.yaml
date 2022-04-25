@@ -1,12 +1,7 @@
 application:
-  timeout:
-    read: 1000
-    write: 1000
   port: 8080
   host: "localhost"
   mode: "debug"
-  appId: "go"
-  apiBaseRoute: "/api"
 
 databases:
   shopCart:
@@ -27,3 +22,6 @@ redis:
   host: "localhost:6379"
   password: ""
   db: 0
+
+proxyServer:
+  host: "localhost:8787"
