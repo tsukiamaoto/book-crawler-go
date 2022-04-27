@@ -42,11 +42,11 @@ func (s *Spider) init() {
 	s.Collector.Limit(&colly.LimitRule{
 		DomainGlob:  "*",
 		Parallelism: 3,
-		Delay: 5 * time.Second,
+		Delay:       5 * time.Second,
 		RandomDelay: 3 * time.Second,
 	})
 
-	setProxy(s.Collector)
+	// setProxy(s.Collector)
 }
 
 func New() *Spider {
@@ -67,19 +67,16 @@ func New() *Spider {
 	return s
 }
 
+// get book information from 博客來
 func (s *Spider) Run() {
 	var wg sync.WaitGroup
-
-	// get book information from 博客來
+	
 	productCh := make(chan *models.Product, 10)
 	urlOfMainPageBookListCh := make(chan string, 10)
 	urlOfAllBookListCh := make(chan string, 10)
 
-	urlOfMainPageBookListCh <- "https://www.books.com.tw/web/sys_bbotm/books/070701/?loc=P_0001_3_001"
-	urlOfAllBookListCh <- "https://www.books.com.tw/web/sys_bbotm/books/070701/?loc=P_0001_3_001"
-	close(urlOfMainPageBookListCh)
-	// homeUrl := "https://www.books.com.tw/"
-	// go s.getUrlOfMainPageBookListCh(urlOfMainPageBookListCh, urlOfAllBookListCh, homeUrl)
+	homeUrl := "https://www.books.com.tw/web/books/?loc=menu_1_001"
+	go s.getUrlOfMainPageBookListCh(urlOfMainPageBookListCh, urlOfAllBookListCh, homeUrl)
 	go s.getNextPageOfBottomBookList(urlOfMainPageBookListCh, urlOfAllBookListCh)
 	go s.visitEveryBookOnBottomBookList(urlOfAllBookListCh, productCh)
 
@@ -93,7 +90,6 @@ func (s *Spider) Run() {
 
 	for product := range productCh {
 		if product.Name != "" {
-			fmt.Println("finished", product)
 			key := product.Name
 
 			wg.Add(1)
@@ -114,8 +110,6 @@ func (s *Spider) Run() {
 }
 
 func (s *Spider) visitEveryBookOnBottomBookList(urlCh chan string, productCh chan *models.Product) {
-	// // copy collector to avoid for blocked the same resource
-	// threadCollector := s.Collector.Clone()
 	// before visiting web
 	s.Collector.OnRequest(func(r *colly.Request) {
 		// Set header set
@@ -129,26 +123,18 @@ func (s *Spider) visitEveryBookOnBottomBookList(urlCh chan string, productCh cha
 	reqTimes := 0
 	s.Collector.OnHTML(".wrap > .item", func(e *colly.HTMLElement) {
 		productName := e.ChildText(".msg > h4 > a")
-
 		if !s.Redis.Exists(productName) {
 			reqTimes++
-
-			if (reqTimes % 10 == 0) {
+			if reqTimes%10 == 0 {
 				setProxy(s.Collector)
 			}
 
 			productLink := e.Request.AbsoluteURL(e.ChildAttr("a", "href"))
 
-			// 非同步執行速度太快，會直接鎖IP，有Proxy再去使用
 			go func(url string) {
 				product := s.getNewProduct(url)
 				productCh <- product
 			}(productLink)
-			
-			// c := s.Collector.Clone() // add a thread to avoid for blocked the same resource
-			// product := getNewProduct(c, productLink)
-			// productCh <- product
-
 		}
 	})
 
@@ -162,6 +148,7 @@ func (s *Spider) visitEveryBookOnBottomBookList(urlCh chan string, productCh cha
 func (s *Spider) getNewProduct(url string) *models.Product {
 	var product *models.Product = new(models.Product)
 	productCollector := s.Collector.Clone() // add a thread to avoid for blocked
+
 	// before visiting web
 	productCollector.OnRequest(func(r *colly.Request) {
 		// Set header set
@@ -257,8 +244,8 @@ func (s *Spider) getUrlOfMainPageBookListCh(urlOfMainPageBookListCh, urlOfAllBoo
 		cookies := configs.GetCookies()
 		mainPageCollector.SetCookies("books.com.tw", cookies)
 
-		if mainPageReqTimes % 10 == 0 {
-			setProxy(subPageCollector)
+		if mainPageReqTimes%10 == 0 {
+			setProxy(mainPageCollector)
 		}
 	})
 
@@ -271,34 +258,49 @@ func (s *Spider) getUrlOfMainPageBookListCh(urlOfMainPageBookListCh, urlOfAllBoo
 		cookies := configs.GetCookies()
 		subPageCollector.SetCookies("books.com.tw", cookies)
 
-		if subPageReqTimes % 10 == 0 {
+		if subPageReqTimes%10 == 0 {
 			setProxy(subPageCollector)
 		}
 	})
 
 	// visit url of main book type
-	mainPageCollector.OnHTML(".menu > li[data-key] > h3", func(e *colly.HTMLElement) {
-		e.ForEach("a", func(_ int, e2 *colly.HTMLElement) {
-			name := e2.Text
-			url := e2.Request.AbsoluteURL(e2.Attr("href"))
+	mainPageCollector.OnHTML(".menu > li[data-key] > h3 > a", func(e *colly.HTMLElement) {
+		name := e.Text
+		url := e.Request.AbsoluteURL(e.Attr("href"))
 
-			if name == "中文書" ||
-				name == "簡體書" {
-				subPageCollector.Visit(url)
-			}
-		})
+		hasVisited, err := e.Request.HasVisited(url)
+		if err != nil {
+			log.Error(err)
+		}
+
+		if (name == "中文書" ||
+			name == "簡體書") && !hasVisited {
+			subPageCollector.Visit(url)
+		}
 	})
 
 	// visit url of sub book type
 	subPageCollector.OnHTML(".type02_l001-1 > ul > li > span > a", func(e *colly.HTMLElement) {
 		url := e.Request.AbsoluteURL(e.Attr("href"))
 
-		e.Request.Visit(url)
+		hasVisited, err := e.Request.HasVisited(url)
+		if err != nil {
+			log.Error(err)
+		}
+
+		if !hasVisited {
+			e.Request.Visit(url)
+		}
 	})
 
 	// visit url of middle level of sub book type
 	subPageCollector.OnHTML(".sub > li > span > a", func(e *colly.HTMLElement) {
 		url := e.Request.AbsoluteURL(e.Attr("href"))
+
+		hasVisited, err := e.Request.HasVisited(url)
+		if err != nil {
+			log.Error(err)
+		}
 
 		// is in the page of bottom level of sub book type
 		r, _ := regexp.Compile("sys_b{1,2}otm")
@@ -308,8 +310,9 @@ func (s *Spider) getUrlOfMainPageBookListCh(urlOfMainPageBookListCh, urlOfAllBoo
 			urlOfAllBookListCh <- URL2string
 		}
 
-		// utils.DelayTimeForVisiting()
-		e.Request.Visit(url)
+		if !hasVisited {
+			e.Request.Visit(url)
+		}
 	})
 
 	mainPageCollector.Visit(url)
@@ -319,7 +322,6 @@ func (s *Spider) getUrlOfMainPageBookListCh(urlOfMainPageBookListCh, urlOfAllBoo
 }
 
 func (s *Spider) getNextPageOfBottomBookList(urlOfMainPageBookListCh, urlOfAllBookListCh chan string) {
-	// nextPageCollector := s.Collector.Clone()
 	// before visiting web
 	reqTimes := 0
 	s.Collector.OnRequest(func(r *colly.Request) {
@@ -330,14 +332,13 @@ func (s *Spider) getNextPageOfBottomBookList(urlOfMainPageBookListCh, urlOfAllBo
 		cookies := configs.GetCookies()
 		s.Collector.SetCookies("books.com.tw", cookies)
 
-		if reqTimes % 10 == 0 {
+		if reqTimes%10 == 0 {
 			setProxy(s.Collector)
 		}
 	})
 
 	// go to the next book list page
 	s.Collector.OnHTML(".nxt", func(e *colly.HTMLElement) {
-		fmt.Println("find nxt")
 		nextPageUrl := e.Request.AbsoluteURL(e.Attr("href"))
 		urlOfAllBookListCh <- nextPageUrl
 
@@ -345,7 +346,6 @@ func (s *Spider) getNextPageOfBottomBookList(urlOfMainPageBookListCh, urlOfAllBo
 	})
 
 	for url := range urlOfMainPageBookListCh {
-		fmt.Println("main page", url)
 		s.Collector.Visit(url)
 	}
 	s.Collector.Wait()
@@ -354,8 +354,6 @@ func (s *Spider) getNextPageOfBottomBookList(urlOfMainPageBookListCh, urlOfAllBo
 
 func setProxy(c *colly.Collector) {
 	proxies := GetProxies()
-
-	fmt.Println("proxies", proxies)
 	rp, err := proxy.RoundRobinProxySwitcher(proxies...)
 	if err != nil {
 		log.Error(err)
