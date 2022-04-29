@@ -110,6 +110,7 @@ func (s *Spider) Run() {
 }
 
 func (s *Spider) visitEveryBookOnBottomBookList(urlCh chan string, productCh chan *models.Product) {
+	wg := sync.WaitGroup{}
 	// before visiting web
 	s.Collector.OnRequest(func(r *colly.Request) {
 		// Set header set
@@ -132,8 +133,10 @@ func (s *Spider) visitEveryBookOnBottomBookList(urlCh chan string, productCh cha
 			productLink := e.Request.AbsoluteURL(e.ChildAttr("a", "href"))
 
 			go func(url string) {
+				wg.Add(1)
 				product := s.getNewProduct(url)
 				productCh <- product
+				defer wg.Done()
 			}(productLink)
 		}
 	})
@@ -142,6 +145,7 @@ func (s *Spider) visitEveryBookOnBottomBookList(urlCh chan string, productCh cha
 		s.Collector.Visit(url)
 	}
 	s.Collector.Wait()
+	wg.Wait()
 	close(productCh)
 }
 
