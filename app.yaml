@@ -1,27 +1,23 @@
-application:
-  port: 8080
-  host: "localhost"
-  mode: "debug"
-
 databases:
   shopCart:
-    host: "localhost"
+    host: "postgresql"
     port: 5432
-    user: "postgres"
-    password: 9955
+    user: "test"
+    password: "secret"
     dbname: "shop_cart"
 
-  default:
-    host: "localhost"
-    port: 5432
-    user: "postgres"
-    password: 9955
-    dbname: "postgres"
+  # default:
+  #   host: "postgresql"
+  #   port: 5432
+  #   user: "postgres"
+  #   password: "9955"
+  #   dbname: "postgres"
 
 redis:
-  host: "localhost:6379"
+  host: "redis:6379"
   password: ""
   db: 0
 
 proxyServer:
-  host: "localhost:8787"
+  host: "proxy-server-app-1:8787"
+  # host: "localhost:8787"

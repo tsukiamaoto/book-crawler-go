@@ -25,50 +25,49 @@ type Database struct {
 }
 
 func LoadConfig() *Config {
-	viper.AddConfigPath(".")
-	viper.AddConfigPath("..")
-	viper.SetConfigName("app")
-	viper.SetConfigType("yaml")
+	config := viper.New()
+	config.AddConfigPath(".")
+	config.AddConfigPath("..")
+	config.SetConfigName("app")
+	config.SetConfigType("yaml")
 
-	viper.AutomaticEnv()
+	config.AutomaticEnv()
 
-	err := viper.ReadInConfig() // Find and read the config file
+	err := config.ReadInConfig() // Find and read the config file
 	if err != nil {
 		panic("讀取設定檔出現錯誤，錯誤的原因為" + err.Error())
 	}
 
 	var dbs = make(map[string]*Database)
-	dbs["shopCart"] = getDatabase("shopCart")
-	dbs["default"] = getDatabase("default")
+	dbs["shopCart"] = getDatabase("shopCart", config)
+	dbs["default"] = getDatabase("default", config)
 
-	serverAddress := fmt.Sprintf("%s:%d", viper.GetString("application.host"), viper.GetInt("application.port"))
+	serverAddress := fmt.Sprintf("%s:%d", config.GetString("application.host"), config.GetInt("application.port"))
 
 	redis := &Redis{
-		Address:  viper.GetString("redis.host"),
-		Password: viper.GetString("redis.password"),
-		DB:       viper.GetInt("redis.db"),
+		Address:  config.GetString("redis.host"),
+		Password: config.GetString("redis.password"),
+		DB:       config.GetInt("redis.db"),
 	}
 
-	proxyServerAddress := fmt.Sprintf("%s", viper.GetString("proxyServer.host"))
+	proxyServerAddress := config.GetString("proxyServer.host")
 
-	config := &Config{
+	return &Config{
 		Databases:       dbs,
 		ServerAddress:   serverAddress,
 		Redis:           redis,
 		ProxyServerAddr: proxyServerAddress,
 	}
-
-	return config
 }
 
-func getDatabase(name string) *Database {
-	dbName := viper.GetString(fmt.Sprintf("databases.%s.dbname", name))
-	source := fmt.Sprintf("host=%s port=%d user=%s password=%d dbname=%s sslmode=disable TimeZone=Asia/Taipei",
-		viper.GetString(fmt.Sprintf("databases.%s.host", name)),
-		viper.GetInt(fmt.Sprintf("databases.%s.port", name)),
-		viper.GetString(fmt.Sprintf("databases.%s.user", name)),
-		viper.GetInt(fmt.Sprintf("databases.%s.password", name)),
-		viper.GetString(fmt.Sprintf("databases.%s.dbname", name)),
+func getDatabase(name string, config *viper.Viper) *Database {
+	dbName := config.GetString(fmt.Sprintf("databases.%s.dbname", name))
+	source := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable TimeZone=Asia/Taipei",
+		config.GetString(fmt.Sprintf("databases.%s.host", name)),
+		config.GetInt(fmt.Sprintf("databases.%s.port", name)),
+		config.GetString(fmt.Sprintf("databases.%s.user", name)),
+		config.GetString(fmt.Sprintf("databases.%s.password", name)),
+		config.GetString(fmt.Sprintf("databases.%s.dbname", name)),
 	)
 
 	return &Database{

@@ -1,12 +1,9 @@
 package config
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"net/http"
-	"os"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 type Cookie struct {
@@ -16,25 +13,23 @@ type Cookie struct {
 }
 
 func GetCookies() []*http.Cookie {
-	rootDir, err := os.Getwd()
-	if err != nil {
-		log.Error(err)
-	}
+	config := viper.New()
+	config.AddConfigPath(".")
+	config.AddConfigPath("..")
+	config.AddConfigPath("/config")
+	config.SetConfigName("cookies")
+	config.SetConfigType("json")
 
-	fileName := "cookies.json"
-	filePath := rootDir + "\\config\\" + fileName
-	jsonFile, err := os.Open(filePath)
+	config.AutomaticEnv()
+	err := config.ReadInConfig() // Find and read the config file
 	if err != nil {
-		log.Panic(err)
-	}
-
-	byteValue, _ := ioutil.ReadAll(jsonFile)
-	var cookies = make([]*Cookie, 0)
-	if err := json.Unmarshal(byteValue, &cookies); err != nil {
-		log.Error(err)
+		panic("讀取設定檔出現錯誤，錯誤的原因為" + err.Error())
 	}
 
 	var cookies2HttpCookies = make([]*http.Cookie, 0)
+	var cookies = make([]*Cookie, 0)
+	viper.UnmarshalKey("cookies", cookies)
+
 	for _, cookie := range cookies {
 		httpCookie := &http.Cookie{
 			Name:     cookie.Name,

@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  app:
+    build: 
+      context: .
+    networks:
+      - backend
+      - proxy-server
+    depends_on:
+      - "postgresql"
+
+  postgresql:
+    container_name: postgresql
+    image: 'bitnami/postgresql:latest'
+    restart: always
+    ports:
+      - '5432:5432'
+    volumes:
+      - 'postgresql_data:/bitnami/postgresql'
+    networks: 
+      - backend
+    environment:
+      - POSTGRESQL_USERNAME=test
+      - POSTGRESQL_PASSWORD=secret
+      - POSTGRESQL_DATABASE=shop_cart
+      
+
+networks:
+  backend:
+    name: book-crawler-go-net
+    driver: bridge
+  proxy-server:
+    name: proxy-server-net
+    external: true
+      
+volumes:
+  postgresql_data:
