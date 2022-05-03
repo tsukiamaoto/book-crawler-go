@@ -5,7 +5,8 @@ services:
     build: 
       context: .
     networks:
-      - backend
+      - postgresql
+      - redis
       - proxy-server
     depends_on:
       - "postgresql"
@@ -19,7 +20,7 @@ services:
     volumes:
       - 'postgresql_data:/bitnami/postgresql'
     networks: 
-      - backend
+      - postgresql
     environment:
       - POSTGRESQL_USERNAME=test
       - POSTGRESQL_PASSWORD=secret
@@ -27,12 +28,14 @@ services:
       
 
 networks:
-  backend:
-    name: book-crawler-go-net
+  postgresql:
+    name: postgresql
     driver: bridge
   proxy-server:
-    name: proxy-server-net
+    name: proxy-server
     external: true
-      
+  redis:
+    name: redis
+    external: true
 volumes:
   postgresql_data:

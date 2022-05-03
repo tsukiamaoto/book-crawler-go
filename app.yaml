@@ -19,5 +19,6 @@ redis:
   db: 0
 
 proxyServer:
-  host: "proxy-server-app-1:8787"
+  # hostname is container name
+  host: "proxy-server:8787"
   # host: "localhost:8787"
