@@ -60,7 +60,7 @@ func New() *Spider {
 	var hasCreatedDB bool
 	// connect to database
 	s.DB, hasCreatedDB = db.DbConnect()
-	if hasCreatedDB {
+	if !hasCreatedDB {
 		db.AutoMigrate(s.DB)
 	}
 
