@@ -8,7 +8,8 @@ import (
 
 type Products interface {
 	GetProductByName(name string) (*model.Product, error)
-	AddProduct(product *model.Product) error
+	AddProduct(product *model.Product) (*model.Product, error)
+	AddTypeByCategoryId(categoryId uint, productTypes []string) error
 }
 
 type Services struct {

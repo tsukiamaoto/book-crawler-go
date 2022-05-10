@@ -70,7 +70,7 @@ func New() *Spider {
 // get book information from 博客來
 func (s *Spider) Run() {
 	var wg sync.WaitGroup
-	
+
 	productCh := make(chan *models.Product, 10)
 	urlOfMainPageBookListCh := make(chan string, 10)
 	urlOfAllBookListCh := make(chan string, 10)
@@ -99,7 +99,14 @@ func (s *Spider) Run() {
 				s.Redis.Set(key, jsonProduct)
 				// if product did't exist in the database, save product to database
 				if p, _ := services.Products.GetProductByName(key); p.Name == "" {
-					services.Products.AddProduct(product)
+					result, err := services.Products.AddProduct(product)
+					if err != nil {
+						log.Error("Faild to add product,the reason is ", err)
+					}
+
+					if err := services.Products.AddTypeByCategoryId(result.ID, product.Categories[0].Types); err != nil {
+						log.Error("Failed to add type by category id, the reason is ", err)
+					}
 				}
 
 				defer wg.Done()
