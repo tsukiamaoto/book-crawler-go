@@ -104,7 +104,7 @@ func (s *Spider) Run() {
 						log.Error("Faild to add product,the reason is ", err)
 					}
 
-					if err := services.Products.AddTypeByCategoryId(result.ID, product.Categories[0].Types); err != nil {
+					if err := services.Products.AddTypeByCategoryId(result.Categories[0].ID, result.Categories[0].Types); err != nil {
 						log.Error("Failed to add type by category id, the reason is ", err)
 					}
 				}
