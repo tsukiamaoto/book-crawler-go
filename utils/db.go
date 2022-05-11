@@ -17,11 +17,11 @@ func RelationMap(data []string) map[string]string {
 
 func BuildTypes(keys []string, relations map[string]string) []*model.Type {
 	Types := make([]*model.Type, 0)
-	for _, key := range keys {
+	for index, key := range keys {
 		if name, ok := relations[key]; ok {
 			Type := new(model.Type)
 			Type.Name = name
-
+			Type.Level = index
 			Types = append(Types, Type)
 		}
 	}

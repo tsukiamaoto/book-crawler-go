@@ -38,6 +38,7 @@ type Type struct {
 	Name      string `gorm:"not null" json:"name"`
 	ParentID  *int
 	Parent    *Type `gorm:"foreignKey:ParentID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;" json:"parent"`
+	Level     int   `json:"level"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
