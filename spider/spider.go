@@ -220,7 +220,7 @@ func (s *Spider) getNewProduct(url string) *models.Product {
 }
 
 func getCategory(e *colly.HTMLElement) models.Category {
-	var Category models.Category
+	var Category = new(models.Category)
 
 	e.ForEach(".type04_breadcrumb > li", func(_ int, e *colly.HTMLElement) {
 		categoryType := e.ChildText("a")
@@ -247,7 +247,7 @@ func getCategory(e *colly.HTMLElement) models.Category {
 		Category.Price = intPrice
 	}
 
-	return Category
+	return *Category
 }
 
 func (s *Spider) getUrlOfMainPageBookListCh(urlOfMainPageBookListCh, urlOfAllBookListCh chan string, url string) {
