@@ -75,7 +75,7 @@ func (s *Spider) Run() {
 	urlOfMainPageBookListCh := make(chan string, 10)
 	urlOfAllBookListCh := make(chan string, 10)
 
-	homeUrl := "https://www.books.com.tw/web/books/?loc=menu_1_001"
+	homeUrl := "https://www.books.com.tw/"
 	go s.getUrlOfMainPageBookListCh(urlOfMainPageBookListCh, urlOfAllBookListCh, homeUrl)
 	go s.getNextPageOfBottomBookList(urlOfMainPageBookListCh, urlOfAllBookListCh)
 	go s.visitEveryBookOnBottomBookList(urlOfAllBookListCh, productCh)
@@ -139,8 +139,8 @@ func (s *Spider) visitEveryBookOnBottomBookList(urlCh chan string, productCh cha
 
 			productLink := e.Request.AbsoluteURL(e.ChildAttr("a", "href"))
 
+			wg.Add(1)
 			go func(url string) {
-				wg.Add(1)
 				product := s.getNewProduct(url)
 				productCh <- product
 				defer wg.Done()
@@ -157,7 +157,7 @@ func (s *Spider) visitEveryBookOnBottomBookList(urlCh chan string, productCh cha
 }
 
 func (s *Spider) getNewProduct(url string) *models.Product {
-	var product *models.Product = new(models.Product)
+	var product = new(models.Product)
 	productCollector := s.Collector.Clone() // add a thread to avoid for blocked
 
 	// before visiting web
@@ -171,11 +171,21 @@ func (s *Spider) getNewProduct(url string) *models.Product {
 	})
 
 	// get product description
-	productCollector.OnHTML(".grid_19 > div:first-child > .bd > .content", func(h *colly.HTMLElement) {
-		description, err := h.DOM.Html()
-		if err != nil {
-			log.Error(err)
-		}
+	productCollector.OnHTML(".grid_19", func(e *colly.HTMLElement) {
+		var (
+			description string
+			err         error
+		)
+		descriptionIndex := utils.FindTagChildIndex(e, "div", "內容簡介")
+		queryDescription := fmt.Sprintf("div:nth-child(%d) > .bd > .content", descriptionIndex)
+
+		e.ForEach(queryDescription, func(_ int, e2 *colly.HTMLElement) {
+			description, err = e2.DOM.Html()
+			if err != nil {
+				log.Error(err)
+			}
+		})
+
 		product.Description = strings.TrimSpace(description)
 	})
 
